@@ -1,5 +1,5 @@
 {
-  "name": "litcursobasico",
+  "name": "spotify",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,6 +12,6 @@
     "lit": "^3.1.2"
   },
   "devDependencies": {
-    "vite": "^5.2.11"
+    "vite": "^5.2.0"
   }
 }
