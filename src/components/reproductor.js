@@ -1,157 +1,177 @@
-import { LitElement, css, html} from "lit";
-
-export class MyMiddleSection extends LitElement {
+class SearchSongs extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: 'open' });
+      this.shadowRoot.innerHTML = `
+        <style>
+          .albumBusquedaPrincipal {
+            display: flex;
+            width: 550px;
+            height: 40px;
+            margin-top: 0%;
+            margin-left: 5%;
+          }
+  
+          .input {
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a1a;
+            border: none;
+            border-radius: 10px;
+            outline: none;
+            color: white;
+            padding-left: 2%;
+          }
+  
+          .input:focus {
+            animation: rotateShadow 2s infinite linear;
+          }
+  
+          @keyframes rotateShadow {
+            0% {
+              box-shadow: -2px -2px 8px 1px #66d88c, 2px 2px 8px 1px #2b682e;
+            }
+            25% {
+              box-shadow: -2px 2px 8px 1px #66d88c, 2px -2px 8px 1px #2b682e;
+            }
+            50% {
+              box-shadow: 2px 2px 8px 1px #66d88c, -2px -2px 8px 1px #2b682e;
+            }
+            75% {
+              box-shadow 2px -2px 8px 1px #66d88c, -2px 2px 8px 1px #2b682e;
+            }
+            100% {
+              box-shadow -2px -2px 8px 1px #66d88c, 2px 2px 8px 1px #2b682e;
+            }
+          }
+  
+          @media screen and (max-width: 768px) {
+            .albumBusquedaPrincipal {
+              display: flex;
+              width: 350px;
+              height: 40px;
+              margin-top: 3%;
+              margin-left: 4%;
+            }
+          }
+        </style>
+        <div class="albumBusquedaPrincipal">
+          <input placeholder="Que cancion quieres escuchar?" class="input" name="text" type="text" />
+        </div>
+        <div id="songList"></div>
+      `;
+    }
+  
+    connectedCallback() {
+      this.songSearch = this.shadowRoot.querySelector('.input');
+      this.songSearch.addEventListener('keypress', this.handleKeyPress.bind(this));
+    }
+  
+    handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        const query = this.songSearch.value.trim();
+        if (query) {
+          console.log('Query:', query);
+          this.searchAndDisplaySongs(query);
+        } else {
+          console.log('Empty query, ignoring');
+        }
+      }
+    }
+  
+    async searchAndDisplaySongs(query) {
+      const codeBase = query.replace(/\s/g, '%20');
+      const url = `https://spotify23.p.rapidapi.com/search/?q=${codeBase}&type=tracks&offset=0&limit=1&numberOfTopResults=1`;
+      const options = {
+        method: 'GET',
+        headers: {
+          'X-RapidAPI-Key': '55bd10df80msh7c23fde758f4c2dp150e70jsn51487fb155a5',
+          'X-RapidAPI-Host': 'spotify23.p.rapidapi.com'
+        }
+      };
+  
+      try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const result = await response.json();
+        console.log('API Response:', result); // Verifica la respuesta de la API
+        const track = result.tracks.items[0]?.data;
+        if (track) {
+          this.playSong(track);
+        } else {
+          this.clearResults();
+        }
+      } catch (error) {
+        console.error('Error fetching the track:', error);
+        alert('Error fetching the track');
+      }
+    }
+  
+    playSong(song) {
+      const trackUri = song.uri;
+      console.log('Dispatching event with URI:', trackUri);
+      this.dispatchEvent(new CustomEvent('play-song', { detail: { uri: trackUri }, bubbles: true, composed: true }));
+    }
+  
+    clearResults() {
+      const songList = this.shadowRoot.querySelector('#songList');
+      songList.innerHTML = '';
+    }
+  }
+  
+  customElements.define('search-songs', SearchSongs);
+  
+  class MyFrame extends HTMLElement {
     constructor() {
         super();
+        this.attachShadow({ mode: "open" });
+        // Agregar un evento de clic al elemento para crear el AudioContext
+        this.addEventListener('click', this.createAudioContext.bind(this));
     }
-    static styles = css`
-    *{
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+
+    createAudioContext() {
+        // Verificar si ya hay un AudioContext creado
+        if (!this.audioContext) {
+            // Crear un nuevo AudioContext
+            this.audioContext = new AudioContext();
+        } else {
+            // Si ya existe un AudioContext, reanudarlo si está suspendido
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
+        }
     }
-    .body{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+
+    connectedCallback() {
+        this.renderFrame();
     }
-    .header{
-        display: flex;
-        height: 15vh;
-        justify-content: center;
-        align-items: center;
+
+    renderFrame() {
+        const uri = this.getAttribute('uri');
+        if (uri) {
+            const id = uri.split(':')[2];
+            const typeOf = uri.split(':')[1];
+            this.shadowRoot.innerHTML = `
+                <iframe class="spotify-iframe" width="100%" height="400" src="https://open.spotify.com/embed/${typeOf}/${id}" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+            `;
+        } else {
+            this.shadowRoot.innerHTML = '';
+        }
     }
-    .UserOptions{
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
+
+    static get observedAttributes() {
+        return ["uri"];
     }
-    .songName{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    .mediaOptions{
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        padding-left: 3vh;
-        padding-right: 3vh;
-        height: 35vh;
-        justify-content: space-around;
-    }
-    .musicTime{
-        display: flex;
-        justify-content: space-between;
-    }
-    .progressMusic{
-        display: flex;
-        justify-content: center;
-    }
-    .progressMusic progress{
-        width: 100%;
-        height: 0.5vh;
-        background-color: #ddd;
-    }
-    progress::-webkit-progress-value{
-        background-color: #27AE60;
-    }
-    progress::-webkit-progress-bar {
-        background-color: #ececec;
-    }
-    .mediaControl{
-        display: flex;
-        justify-content: space-evenly;
-        align-items: center;
-    }
-    .volumeControl{
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    .volumeControl progress{
-        width: 50%;
-        height: 0.3vh;
-        background-color: #ddd;
-    }
-    .deviceOutput{
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        justify-content: center;
-    }
-    .deviceOutput div{
-        display: flex;
-        flex-direction: row;
-        justify-content: space-around;
-        background: #6fcf9752;
-        width: 28vh;
-        border-radius: 1vh;
-    }
-    .SongImage{
-        display: flex;
-        justify-content: center
-    }
-    `;
-    render() {return html`
-        <body class="body">
-            <header class="header">
-                <div>
-                <h3>Now Playing</h3>
-                </div>
-            </header>
-            <div class="SongInfo">
-                <div class="SongImage">
-                <img src="/src/assets/image_20.png">
-                </div>
-                <div class="UserOptions">
-                    <div>
-                        <box-icon name='plus' color='#9bd8b5'></box-icon>
-                    </div>
-                    <div class="songName">
-                        <h3>
-                            Money Machine
-                        </h3>
-                        <h6>
-                            1000 Gecks
-                        </h6>
-                    </div>
-                    <div>
-                        <box-icon name='heart' color='#9bd8b5' ></box-icon>
-                    </div>
-                </div>
-            </div>
-            <div class="mediaOptions">
-                <div class="musicTimeline">
-                    <div class="musicTime">
-                        <p>2:14</p>
-                        <p>-1:15</p>
-                    </div>
-                    <div class="progressMusic">
-                        <progress class="progress" value="214" max="329"></progress>
-                    </div>
-                    </div>
-                    <div class="mediaControl">
-                    <box-icon name='shuffle' flip='vertical' color='#828282' ></box-icon>
-                    <box-icon name='rewind' flip='vertical' color='#27ae60' size='lg' ></box-icon>
-                    <box-icon name='play-circle' color='#27ae60' size='lg'></box-icon>
-                    <box-icon name='rewind' rotate='180' color='#27ae60' size='lg'></box-icon>
-                    <box-icon name='repeat' color='#828282'></box-icon>
-                    </div>
-                    <div class="volumeControl">
-                    <box-icon name='volume-low' color='#828282'></box-icon>
-                    <progress class="progress" value="214" max="329"></progress>
-                    <box-icon name='volume-full' color='#828282' ></box-icon>
-                    </div>
-                    <div class="deviceOutput">
-                        <div><box-icon name='headphone' color='#828282' ></box-icon>
-                        <p>Airpods Pro (Dave)</p>
-                    </div>
-                </div>
-            </div>
-        </body>
-        `;
+
+    attributeChangedCallback(name, oldVal, newVal) {
+        if (name === 'uri' && oldVal !== newVal) {
+            this.renderFrame();
+            this.dispatchEvent(new CustomEvent('uri-changed', { detail: { uri: newVal } }));
+        }
     }
 }
 
-customElements.define('my-middle-section', MyMiddleSection); 
+customElements.define("my-frame", MyFrame);

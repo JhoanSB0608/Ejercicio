@@ -1,17 +1,18 @@
 const url = 'https://spotify23.p.rapidapi.com/recommendations/?limit=20&seed_tracks=0c6xIDDpzE81m2q797ordA&seed_artists=4NHQUGzhtTLFvgF5SZesLK&seed_genres=classical%2Ccountry';
 const options = {
-        method: 'GET',
-        headers: {
-            'X-RapidAPI-Key': '4265340127msh21794cf1e8bce03p1105d1jsnec76a353b819',
-            'X-RapidAPI-Host': 'spotify23.p.rapidapi.com'
-        }
-    };
-let result
+  method: 'GET',
+  headers: {
+    'x-rapidapi-key': '32cf2e636amsha5f986ac0879f82p1a1ba1jsneaad43f425d1',
+    'x-rapidapi-host': 'spotify23.p.rapidapi.com'
+  }
+};
+
 try {
-    const response = await fetch(url, options);
-    result = await response.json()
+	const response = await fetch(url, options);
+	const result = await response.text();
+	console.log(result);
 } catch (error) {
-    console.error(error);
+	console.error(error);
 }
 
 export const sortSongsForPopularity = () => {
