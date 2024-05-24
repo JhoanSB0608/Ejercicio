@@ -155,7 +155,7 @@ class SearchSongs extends HTMLElement {
             const id = uri.split(':')[2];
             const typeOf = uri.split(':')[1];
             this.shadowRoot.innerHTML = `
-                <iframe class="spotify-iframe" width="100%" height="400" src="https://open.spotify.com/embed/${typeOf}/${id}" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+            <iframe style="border-radius:12px" src="https://open.spotify.com/embed/album/0MkMu019XCFwwuL1ftHKmQ?utm_source=generator" width="100%" height="600" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
             `;
         } else {
             this.shadowRoot.innerHTML = '';
